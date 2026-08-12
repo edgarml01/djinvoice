@@ -15,6 +15,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     - DELETE /api/invoices/{id}/ - Eliminar invoice
     """
     permission_classes = [IsAuthenticated]
+    filter_backends = [ filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'customer']
     search_fields = ['invoice_number', 'customer__email']
     ordering_fields = ['due_date', 'amount', 'created_at']
