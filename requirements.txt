@@ -2,3 +2,4 @@ django
 django-rest-framework
 djangorestframework-simplejwt
 psycopg2-binary
+drf-spectacular
