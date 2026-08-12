@@ -91,3 +91,46 @@ class UserLoginTests(APITestCase):
         self.assertIn('non_field_errors', response.data)
         self.assertIn('Credenciales inválidas.', response.data['non_field_errors'][0])
 
+class RefreshTokenTests(APITestCase):
+    def setUp(self):
+        self.refresh_url = reverse('user-refresh')
+        self.email = 'refreshuser@example.com'
+        self.username = 'refreshuser'
+        self.password = 'securepassword123'
+        self.user = User.objects.create_user(
+            email=self.email,
+            username=self.username,
+            password=self.password
+        )
+    def test_refresh_token_success(self):
+        # First, log in to get a refresh token
+        login_url = reverse('user-login')
+        login_payload = {
+            'email': self.email,
+            'password': self.password
+        }
+        login_response = self.client.post(login_url, login_payload, format='json')
+        refresh_token = login_response.data['refresh']
+
+        # Now, use the refresh token to get a new access token
+        refresh_payload = {
+            'refresh': refresh_token
+        }
+        response = self.client.post(self.refresh_url, refresh_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+
+    def test_refresh_token_missing(self):
+        response = self.client.post(self.refresh_url, {}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+        self.assertEqual(response.data['error'], 'Refresh token is required.')
+    
+    def test_refresh_token_invalid(self):
+        refresh_payload = {
+            'refresh': 'invalidtoken'
+        }
+        response = self.client.post(self.refresh_url, refresh_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+        self.assertEqual(response.data['error'], 'Invalid refresh token.')
